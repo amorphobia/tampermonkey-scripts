@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         谷歌搜索重定向
-// @namespace    https://greasyfork.org/zh-CN/scripts/452864-%E8%B0%B7%E6%AD%8C%E6%90%9C%E7%B4%A2%E9%87%8D%E5%AE%9A%E5%90%91
-// @version      0.1.1
+// @namespace    https://github.com/amorphobia/tampermonkey-scripts
+// @version      0.1.2
 // @description  自动从 google.cn 跳转到 google.com.hk
 // @author       amorphobia
 // @match        https://www.google.cn/search*
