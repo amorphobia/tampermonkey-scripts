@@ -1,8 +1,10 @@
 // ==UserScript==
 // @name         TJUPT Tweaks
+// @name:zh-CN   北洋园优化
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.1.1
-// @description  北洋园PT微调
+// @version      0.1.2
+// @description  Current tweaks: Fold the bannar
+// @description:zh-CN  目前的优化：折叠 bannar
 // @author       amorphobia
 // @match        *://tjupt.org/*
 // @match        *://*.tjupt.org/*
