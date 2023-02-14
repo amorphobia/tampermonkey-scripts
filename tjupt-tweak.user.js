@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         TJUPT Tweak
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.1
+// @version      0.1.1
 // @description  北洋园PT微调
 // @author       amorphobia
 // @match        *://tjupt.org/*
 // @match        *://*.tjupt.org/*
-// @run-at       document-start
 // @noframes
 // @homepageURL  https://github.com/amorphobia/tampermonkey-scripts
 // @supportURL   https://github.com/amorphobia/tampermonkey-scripts/issues
