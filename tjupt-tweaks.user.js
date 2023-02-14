@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         TJUPT Tweak
+// @name         TJUPT Tweaks
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
 // @version      0.1.1
 // @description  北洋园PT微调
