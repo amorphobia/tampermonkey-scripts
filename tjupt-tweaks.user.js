@@ -2,9 +2,9 @@
 // @name         TJUPT Tweaks
 // @name:zh-CN   北洋园优化
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.4.0
-// @description  Current tweaks: fold / hide the bannar, hide sticky torrents
-// @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子
+// @version      0.4.1
+// @description  Current tweaks: fold / hide the bannar, hide sticky torrents, botton to copy direct link on torrent list page
+// @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子，种子列表页面添加按钮点击可复制直链
 // @author       amorphobia
 // @match        *://tjupt.org/*
 // @match        *://*.tjupt.org/*
