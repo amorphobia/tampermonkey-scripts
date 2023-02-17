@@ -2,7 +2,7 @@
 // @name         TJUPT Tweaks
 // @name:zh-CN   北洋园优化
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.3.0
+// @version      0.4.0
 // @description  Current tweaks: fold / hide the bannar, hide sticky torrents
 // @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子
 // @author       amorphobia
@@ -52,6 +52,13 @@
                 "隐藏所有置顶" ],
             "type": "gear",
             "value": 0
+        },
+        {
+            "id": "m_torrentDirectLink",
+            "name": "种子直链按钮",
+            "display": "种子直链按钮（左键点击按钮复制直链）",
+            "type": "switch",
+            "value": true
         }
     ];
     let menu_registered = [];
@@ -124,6 +131,13 @@
         }
     }
 
+    function getPasskey() {
+        const link = document.querySelector("[title=\"Latest Torrents\"]");
+        const re = /passkey=([\d\w]+)/;
+        const passkey = re.exec(link.href)[1];
+        return passkey;
+    }
+
     let css = "";
     if (getValue("m_bannerHide")) {
         css = `.logo_img img {\n`
@@ -161,6 +175,40 @@
              + `}\n`;
         // fallsthrough
     default:
+    }
+
+    if (getValue("m_torrentDirectLink")) {
+        const passkey = getPasskey();
+        const id_re = /id=([\d]+)/;
+
+        let tds = document.querySelectorAll("table.torrentname > tbody > tr:nth-of-type(1) > td:nth-of-type(3)");
+
+        for (let td of tds) {
+            const dl = td.querySelector("a");
+            const id = id_re.exec(dl.href)[1];
+            const direct_link = `https://www.tjupt.org/download.php?id=${id}&passkey=${passkey}`;
+            let img = document.createElement("img");
+            img.setAttribute("src", "pic/trans.gif");
+            img.setAttribute("class", "torrent_direct_link");
+            img.setAttribute("alt", "DL");
+            let a = document.createElement("a");
+            a.setAttribute("title", "左键单击复制，链接中包含个人秘钥Passkey，切勿泄露！");
+            a.setAttribute("onclick", "return false");
+            a.setAttribute("id", "direct_link");
+            a.setAttribute("href", direct_link);
+            a.setAttribute("data-clipboard-text", direct_link);
+            a.appendChild(img);
+            td.prepend(a);
+        }
+
+        css += `img.torrent_direct_link {\n`
+             + `    width: 16px;\n`
+             + `    height: 16px;\n`
+             + `    background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAH5QTFRFR3BMyKN4cz0Td3d3sLCw6enp////qHg4oaGhcz0TlpaWkV8opnU2lmQrjVklqHg4m2kvo3I03ruJiFMhn24y4r+N2raG5cSP9+jQg04e1rKD68uUnYpv6ceS0q5/fkkaoaGhzqp8h4eHr6+v+Pj4ekQXdkAV+/v78fHxy6Z6f0p3WgAAAAp0Uk5TAP///////5aWlrne7esAAACHSURBVBjTbc5HEsIwEERRA5qxLeecc77/BTEN0oq/m1ddKhnG36xxtPRhBq2UxyFlG5gAt5zXk+hc59IFRM3yQksTAdKOf3UpICxYCEFEXIQAL2NCnHkAJ/4s7jh2AH6uFrkPSOrvgrhOAFWvFn0FGCYWhDemAbBd6h/XBtgfuh1gP3X2fb4BlrkIUt3i2kgAAAAASUVORK5CYII=');\n`
+             + `    padding-bottom: 1px;\n`
+             + `}\n`;
+
+        location.assign("javascript:registerClipboardJS('#direct_link');void(0)");
     }
 
     if (typeof GM_addStyle !== "undefined") {
