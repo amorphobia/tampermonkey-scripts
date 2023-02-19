@@ -2,9 +2,9 @@
 // @name         TJUPT Tweaks
 // @name:zh-CN   北洋园优化
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.4.1
-// @description  Current tweaks: fold / hide the bannar, hide sticky torrents, botton to copy direct link on torrent list page
-// @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子，种子列表页面添加按钮点击可复制直链
+// @version      0.5.0
+// @description  Current tweaks: fold / hide the bannar, hide sticky torrents, botton to copy direct link on torrent list page, color blind mode
+// @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子，种子列表页面添加按钮点击可复制直链，色盲模式
 // @author       amorphobia
 // @match        *://tjupt.org/*
 // @match        *://*.tjupt.org/*
@@ -59,6 +59,13 @@
             "display": "种子直链按钮（左键点击按钮复制直链）",
             "type": "switch",
             "value": true
+        },
+        {
+            "id": "m_colorBlindMode",
+            "name": "色盲模式",
+            "display": "色盲模式",
+            "type": "switch",
+            "value": false
         }
     ];
     let menu_registered = [];
@@ -209,6 +216,13 @@
              + `}\n`;
 
         location.assign("javascript:registerClipboardJS('#direct_link');void(0)");
+    }
+
+    if (getValue("m_colorBlindMode")) {
+        let spans = document.querySelectorAll("table.main > tbody > tr > td:nth-of-type(2) > ul > li > span[style=\"color: green\"]");
+        for (let span of spans) {
+            span.setAttribute("style", "color: blue");
+        }
     }
 
     if (typeof GM_addStyle !== "undefined") {
