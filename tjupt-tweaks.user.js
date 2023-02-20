@@ -2,9 +2,9 @@
 // @name         TJUPT Tweaks
 // @name:zh-CN   北洋园优化
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.5.0
-// @description  Current tweaks: fold / hide the bannar, hide sticky torrents, botton to copy direct link on torrent list page, color blind mode
-// @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子，种子列表页面添加按钮点击可复制直链，色盲模式
+// @version      0.5.5
+// @description  Current tweaks: fold / hide the bannar, hide sticky torrents, botton to copy direct link on torrent list page, color blind mode, automatically say thanks
+// @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子，种子列表页面添加按钮点击可复制直链，色盲模式，自动说谢谢
 // @author       amorphobia
 // @match        *://tjupt.org/*
 // @match        *://*.tjupt.org/*
@@ -64,6 +64,13 @@
             "id": "m_colorBlindMode",
             "name": "色盲模式",
             "display": "色盲模式",
+            "type": "switch",
+            "value": false
+        },
+        {
+            "id": "m_autoSayThanks",
+            "name": "自动说谢谢",
+            "display": "自动说谢谢",
             "type": "switch",
             "value": false
         }
@@ -223,6 +230,22 @@
         for (let span of spans) {
             span.setAttribute("style", "color: blue");
         }
+    }
+
+    if (getValue("m_autoSayThanks") && location.href.indexOf("tjupt.org/details") >= 0) {
+        const wait2s = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve();
+            }, 2000);
+        });
+        wait2s.then(() => {
+            let say = document.querySelector("[id=\"saythanks\"]");
+            if (say && !say.disabled) {
+                say.click();
+            }
+        }, () => {
+            console.log("Failed to say thanks");
+        });
     }
 
     if (typeof GM_addStyle !== "undefined") {
