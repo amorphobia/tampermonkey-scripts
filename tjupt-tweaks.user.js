@@ -8,6 +8,7 @@
 // @author       amorphobia
 // @match        *://tjupt.org/*
 // @match        *://*.tjupt.org/*
+// @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @grant        GM_unregisterMenuCommand
 // @grant        GM_openInTab
