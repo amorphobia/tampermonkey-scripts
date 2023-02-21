@@ -2,7 +2,7 @@
 // @name         TJUPT Tweaks
 // @name:zh-CN   北洋园优化
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.5.5
+// @version      0.5.6
 // @description  Current tweaks: fold / hide the bannar, hide sticky torrents, botton to copy direct link on torrent list page, color blind mode, automatically say thanks
 // @description:zh-CN  目前的优化：折叠／隐藏横幅，隐藏置顶种子，种子列表页面添加按钮点击可复制直链，色盲模式，自动说谢谢
 // @author       amorphobia
