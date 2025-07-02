@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex Lyrics Auto Clicker
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.1.0
+// @version      0.1.1
 // @description  Show lyrics automatically in Plex web client
 // @author       amorphobia
 // @match        https://app.plex.tv/
@@ -9,8 +9,8 @@
 // @icon         https://plex.tv/favicon.ico
 // @license      AGPL-3.0-or-later
 // @grant        none
-// downloadURL   https://github.com/amorphobia/tampermonkey-scripts/raw/refs/heads/master/plex-lyrics-auto-clicker.user.js
-// updateURL     https://github.com/amorphobia/tampermonkey-scripts/raw/refs/heads/master/plex-lyrics-auto-clicker.user.js
+// @downloadURL   https://github.com/amorphobia/tampermonkey-scripts/raw/refs/heads/master/plex-lyrics-auto-clicker.user.js
+// @updateURL     https://github.com/amorphobia/tampermonkey-scripts/raw/refs/heads/master/plex-lyrics-auto-clicker.user.js
 // ==/UserScript==
 
 (function() {
@@ -19,7 +19,7 @@
         if (document.querySelectorAll('[class*="AudioVideoFullPlayer-content"]').length > 0
                 && document.querySelectorAll('[class*="AudioVideoLyrics-content"]').length === 0) {
             const lrc = document.querySelectorAll('[data-testid*="lyricsButton"]');
-            if (lrc.length > 0) {
+            if (lrc.length > 0 && !lrc[0].disabled) {
                 console.log("Clicking ...");
                 const rect = lrc[0].getBoundingClientRect();
                 const x = rect.left + (rect.width / 2);
