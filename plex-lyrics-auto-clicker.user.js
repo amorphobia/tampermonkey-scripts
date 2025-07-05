@@ -4,7 +4,7 @@
 // @version      0.1.2
 // @description  Show lyrics automatically in Plex web client
 // @author       amorphobia
-// @match        https://app.plex.tv/
+// @match        https://app.plex.tv/*
 // @include      http://*:32400/*
 // @icon         https://plex.tv/favicon.ico
 // @license      AGPL-3.0-or-later
