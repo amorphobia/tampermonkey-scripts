@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex Lyrics Auto Clicker
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      0.1.1
+// @version      0.1.2
 // @description  Show lyrics automatically in Plex web client
 // @author       amorphobia
 // @match        https://app.plex.tv/
@@ -17,6 +17,8 @@
     'use strict';
     window.setInterval(function() {
         if (document.querySelectorAll('[class*="AudioVideoFullPlayer-content"]').length > 0
+                && document.querySelectorAll('[class*="AudioVideoPlaybackSettings-container"]').length === 0
+                && document.querySelectorAll('[class*="AudioVideoPlayQueue-container"]').length === 0
                 && document.querySelectorAll('[class*="AudioVideoLyrics-content"]').length === 0) {
             const lrc = document.querySelectorAll('[data-testid*="lyricsButton"]');
             if (lrc.length > 0 && !lrc[0].disabled) {
