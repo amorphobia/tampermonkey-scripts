@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         北森工资单数据导出
 // @namespace    https://github.com/amorphobia/tampermonkey-scripts
-// @version      3.8
+// @version      4.2
 // @description  从北森工资单网页提取数据并导出
 // @author       amorphobia
 // @match        https://*/*
 // @icon         https://www.beisen.com/favicon.ico
 // @grant        GM_registerMenuCommand
 // @grant        GM_notification
+// @require      https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
 // @downloadURL  https://github.com/amorphobia/tampermonkey-scripts/raw/refs/heads/master/beisen-compensation-export.user.js
 // @updateURL    https://github.com/amorphobia/tampermonkey-scripts/raw/refs/heads/master/beisen-compensation-export.user.js
 // ==/UserScript==
@@ -322,6 +323,7 @@
             <head>
                 <title>工资单数据预览和导出</title>
                 <meta charset="UTF-8">
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
                 <style>
                     body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
                     .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -382,7 +384,7 @@
                         <div class="export-buttons">
                             <button class="btn btn-info" onclick="downloadHTML()">📄 导出HTML文件</button>
                             <button class="btn btn-primary" onclick="downloadJSON()">📄 下载JSON文件</button>
-                            <button class="btn btn-success" onclick="copyJSON()">📋 复制JSON数据</button>
+                            <button class="btn btn-success" onclick="downloadPNG()">🖼️ 导出PNG图片</button>
                             <button class="btn btn-secondary" onclick="copyText()">📝 复制文本摘要</button>
                         </div>
                     </div>
@@ -514,6 +516,137 @@
                                 }
                             }, 300);
                         }, duration);
+                    }
+                    
+                    // 动态加载html2canvas库
+                    function loadHtml2Canvas() {
+                        return new Promise((resolve, reject) => {
+                            if (typeof html2canvas !== 'undefined') {
+                                resolve();
+                                return;
+                            }
+                            
+                            const script = document.createElement('script');
+                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                            script.onload = resolve;
+                            script.onerror = () => reject(new Error('html2canvas库加载失败'));
+                            document.head.appendChild(script);
+                        });
+                    }
+                    
+                    // 页面加载完成后尝试加载html2canvas
+                    window.addEventListener('load', () => {
+                        loadHtml2Canvas().catch(error => {
+                            console.error('加载html2canvas失败:', error);
+                        });
+                    });
+                    
+                    function downloadPNG() {
+                        // 检查html2canvas是否已加载
+                        if (typeof html2canvas === 'undefined') {
+                            showToast('正在加载图片生成库，请稍后重试...', 'info');
+                            loadHtml2Canvas().then(() => {
+                                downloadPNG(); // 重新调用
+                            }).catch(error => {
+                                showToast('html2canvas库加载失败: ' + error.message, 'error');
+                            });
+                            return;
+                        }
+                        
+                        try {
+                            showToast('正在生成PNG图片，请稍候...', 'info');
+                            
+                            // 创建临时iframe用于渲染纯净的HTML内容
+                            const iframe = document.createElement('iframe');
+                            iframe.style.cssText = \`
+                                position: absolute;
+                                left: -9999px;
+                                top: 0;
+                                width: 800px;
+                                height: 600px;
+                                border: none;
+                                visibility: hidden;
+                            \`;
+                            document.body.appendChild(iframe);
+                            
+                            // 在iframe中写入HTML内容
+                            const htmlContent = generatePayslipHTML(jsonData);
+                            iframe.contentDocument.open();
+                            iframe.contentDocument.write(htmlContent);
+                            iframe.contentDocument.close();
+                            
+                            // 等待iframe内容加载完成
+                            setTimeout(() => {
+                                const targetElement = iframe.contentDocument.querySelector('.container');
+                                if (!targetElement) {
+                                    document.body.removeChild(iframe);
+                                    showToast('无法找到要截图的内容', 'error');
+                                    return;
+                                }
+                                
+                                console.log('找到截图目标:', targetElement.className);
+                                
+                                // 使用html2canvas生成图片
+                                html2canvas(targetElement, {
+                                    backgroundColor: '#f8f9fa',
+                                    scale: 1,
+                                    useCORS: true,
+                                    allowTaint: false,
+                                    foreignObjectRendering: false,
+                                    logging: false,
+                                    width: 760,
+                                    height: targetElement.scrollHeight
+                                }).then(canvas => {
+                                    // 清理iframe
+                                    document.body.removeChild(iframe);
+                                    
+                                    console.log('Canvas生成成功，尺寸:', canvas.width, 'x', canvas.height);
+                                    
+                                    if (canvas.width === 0 || canvas.height === 0) {
+                                        showToast('生成的图片为空，请检查内容', 'error');
+                                        return;
+                                    }
+                                    
+                                    try {
+                                        // 使用toDataURL代替toBlob避免跨域问题
+                                        const dataURL = canvas.toDataURL('image/png', 1.0);
+                                        console.log('DataURL生成成功，长度:', dataURL.length);
+                                        
+                                        if (dataURL === 'data:,' || dataURL.length < 100) {
+                                            showToast('图片生成失败，内容为空', 'error');
+                                            return;
+                                        }
+                                        
+                                        const a = document.createElement('a');
+                                        a.href = dataURL;
+                                        a.download = \`工资单_\${jsonData.year || 'unknown'}_\${formatMonthForFilename(jsonData.month)}.png\`;
+                                        a.style.display = 'none';
+                                        
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        
+                                        setTimeout(() => {
+                                            document.body.removeChild(a);
+                                        }, 100);
+                                        
+                                        showToast('PNG图片下载已开始！', 'success');
+                                    } catch (downloadError) {
+                                        console.error('PNG下载失败:', downloadError);
+                                        showToast('PNG下载失败: ' + downloadError.message, 'error');
+                                    }
+                                }).catch(error => {
+                                    // 清理iframe
+                                    if (iframe.parentNode) {
+                                        document.body.removeChild(iframe);
+                                    }
+                                    console.error('PNG生成失败:', error);
+                                    showToast('PNG生成失败: ' + error.message, 'error');
+                                });
+                            }, 500); // 增加等待时间确保iframe内容完全加载
+                        } catch (error) {
+                            console.error('PNG导出失败:', error);
+                            showToast('PNG导出失败: ' + error.message, 'error');
+                        }
                     }
                     
                     function downloadHTML() {
@@ -891,7 +1024,7 @@
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; justify-content: center;">
                 <button id="downloadHtmlBtn" style="background: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">📄 导出HTML</button>
-                <button id="copyJsonBtn" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">📋 复制JSON</button>
+                <button id="downloadPngBtn" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">🖼️ 导出PNG</button>
                 <button id="copyTextBtn" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">📝 复制文本</button>
             </div>
             
@@ -902,14 +1035,14 @@
 
         const closeBtn = content.querySelector('#closeBtn');
         const downloadHtmlBtn = content.querySelector('#downloadHtmlBtn');
-        const copyJsonBtn = content.querySelector('#copyJsonBtn');
+        const downloadPngBtn = content.querySelector('#downloadPngBtn');
         const copyTextBtn = content.querySelector('#copyTextBtn');
 
         closeBtn.onclick = () => document.body.removeChild(modal);
         modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
 
         downloadHtmlBtn.onclick = () => downloadHtmlFromModal(data);
-        copyJsonBtn.onclick = () => copyToClipboard(JSON.stringify(data, null, 2), 'JSON数据已复制到剪贴板！');
+        downloadPngBtn.onclick = () => downloadPngFromModal(data);
         copyTextBtn.onclick = () => copyToClipboard(generateTextSummary(data), '文本摘要已复制到剪贴板！');
 
         modal.appendChild(content);
@@ -943,6 +1076,124 @@
         } catch (error) {
             console.error('HTML导出失败:', error);
             showToast('HTML导出失败: ' + error.message, 'error');
+        }
+    }
+
+    // 从模态框导出PNG
+    function downloadPngFromModal(data) {
+        // 检查html2canvas是否可用
+        if (typeof html2canvas === 'undefined') {
+            // 动态加载html2canvas库
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = () => {
+                performPngExport(data);
+            };
+            script.onerror = () => {
+                showToast('无法加载html2canvas库，PNG导出失败', 'error');
+            };
+            document.head.appendChild(script);
+            showToast('正在加载图片生成库...', 'info');
+        } else {
+            performPngExport(data);
+        }
+    }
+
+    // 执行PNG导出
+    function performPngExport(data) {
+        try {
+            showToast('正在生成PNG图片，请稍候...', 'info');
+            
+            // 创建临时iframe用于渲染纯净的HTML内容
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = `
+                position: absolute;
+                left: -9999px;
+                top: 0;
+                width: 800px;
+                height: 600px;
+                border: none;
+                visibility: hidden;
+            `;
+            document.body.appendChild(iframe);
+            
+            // 在iframe中写入HTML内容
+            const htmlContent = generatePayslipHTML(data);
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(htmlContent);
+            iframe.contentDocument.close();
+            
+            // 等待iframe内容加载完成
+            setTimeout(() => {
+                const targetElement = iframe.contentDocument.querySelector('.container');
+                if (!targetElement) {
+                    document.body.removeChild(iframe);
+                    showToast('无法找到要截图的内容', 'error');
+                    return;
+                }
+                
+                console.log('找到截图目标:', targetElement.className);
+                
+                // 使用html2canvas生成图片
+                html2canvas(targetElement, {
+                    backgroundColor: '#f8f9fa',
+                    scale: 1,
+                    useCORS: true,
+                    allowTaint: false,
+                    foreignObjectRendering: false,
+                    logging: false,
+                    width: 760,
+                    height: targetElement.scrollHeight
+                }).then(canvas => {
+                    // 清理iframe
+                    document.body.removeChild(iframe);
+                    
+                    console.log('Canvas生成成功，尺寸:', canvas.width, 'x', canvas.height);
+                    
+                    if (canvas.width === 0 || canvas.height === 0) {
+                        showToast('生成的图片为空，请检查内容', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        // 使用toDataURL代替toBlob避免跨域问题
+                        const dataURL = canvas.toDataURL('image/png', 1.0);
+                        console.log('DataURL生成成功，长度:', dataURL.length);
+                        
+                        if (dataURL === 'data:,' || dataURL.length < 100) {
+                            showToast('图片生成失败，内容为空', 'error');
+                            return;
+                        }
+                        
+                        const a = document.createElement('a');
+                        a.href = dataURL;
+                        a.download = `工资单_${data.year || 'unknown'}_${formatMonthForFilename(data.month)}.png`;
+                        a.style.display = 'none';
+                        
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                        }, 100);
+                        
+                        showToast('PNG图片下载已开始！', 'success');
+                    } catch (downloadError) {
+                        console.error('PNG下载失败:', downloadError);
+                        showToast('PNG下载失败: ' + downloadError.message, 'error');
+                    }
+                }).catch(error => {
+                    // 清理iframe
+                    if (iframe.parentNode) {
+                        document.body.removeChild(iframe);
+                    }
+                    console.error('PNG生成失败:', error);
+                    showToast('PNG生成失败: ' + error.message, 'error');
+                });
+            }, 500); // 增加等待时间确保iframe内容完全加载
+        } catch (error) {
+            console.error('PNG导出失败:', error);
+            showToast('PNG导出失败: ' + error.message, 'error');
         }
     }
 
@@ -1222,12 +1473,13 @@
 
     // 显示关于信息
     function showAbout() {
-        const aboutText = `北森工资单数据导出 v3.7
+        const aboutText = `北森工资单数据导出 v4.2
 
 功能特点：
 • 智能数据提取和预览
 • 支持JSON格式导出
 • 支持HTML格式导出
+• 支持PNG图片导出
 • 数据复制到剪贴板
 • 文本摘要生成
 • 完全本地处理，保护隐私
@@ -1235,6 +1487,7 @@
 导出格式：
 • JSON：结构化数据，便于程序处理
 • HTML：专业排版，适合打印和查看
+• PNG：高清图片格式，便于分享和存档
 • 文本：简洁摘要，便于快速浏览
 
 数据格式：
